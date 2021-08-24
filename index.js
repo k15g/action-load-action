@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = require("@actions/core");
 const github = require("@actions/github");
+const fs = require("fs");
 const tar = require("tar");
 async function run() {
     var octokit = github.getOctokit(core.getInput('token'));
@@ -9,15 +10,23 @@ async function run() {
     var regex = /^([\w\-]+)\/([\w\-]+)(@([\w\-]+))?$/;
     if (action.match(regex)) {
         var [_, owner, repo, _, ref] = action.match(regex);
-        console.log(`${owner}/${repo}@${ref}`);
         var response = await octokit.rest.repos.downloadTarballArchive({ owner, repo, ref });
-        console.log(response);
-        var writable = tar.extract({
-            strip: 0,
-            C: `.github/actions/${owner}/${repo}`
+        if (!fs.existsSync(`.github/actions`))
+            fs.mkdirSync(`.github/actions`);
+        fs.writeFileSync(`.github/actions/${owner}-${repo}.tar.gz`, Buffer.from(response.data));
+        if (fs.existsSync(`.github/actions/${owner}/${repo}`))
+            fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
+        fs.mkdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
+        tar.extract({
+            file: `.github/actions/${owner}-${repo}.tar.gz`,
+            strip: 1,
+            C: `.github/actions/${owner}/${repo}`,
+            sync: true
         });
-        writable.write(response.data.toString());
-        writable.end();
+        fs.rmSync(`.github/actions/${owner}-${repo}.tar.gz`);
+    }
+    else {
+        core.setFailed(`Identifier '${action}' is not valid`);
     }
 }
 run();
