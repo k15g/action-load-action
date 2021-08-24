@@ -12,8 +12,7 @@ async function run() {
     var regex = /^([\w\-]+)\/([\w\-]+)(@([\w\-]+))?$/
 
     // Make sure the actions folder exists
-    if (!fs.existsSync(`.github/actions`))
-        fs.mkdirSync(`.github/actions`, { recursive: true })
+    fs.mkdirSync(`.github/actions`, { recursive: true })
 
     actions.split("\n").forEach(async action => {
         if (action.match(regex)) {
@@ -21,15 +20,19 @@ async function run() {
             var [_, owner, repo, _, ref] = action.match(regex)
 
             // Fetch action tar file
-            var response = await octokit.rest.repos.downloadTarballArchive({ owner, repo, ref })
+            try {
+                var response = await octokit.rest.repos.downloadTarballArchive({ owner, repo, ref })
+            } catch (e) {
+                core.setFailed(`Unable to fetch '${action}': ${e.message}`)
+                return
+            }
 
             // Temporary save tar file to disk
             fs.writeFileSync(`.github/actions/${owner}-${repo}.tar.gz`, Buffer.from(response.data as ArrayBuffer))
 
             // Remove existing version of action if available
-            if (fs.existsSync(`.github/actions/${owner}/${repo}`))
-                fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true })
-                // fs.rmSync(`.github/actions/${owner}/${repo}`, { recursive: true })
+            fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true })
+            // fs.rmSync(`.github/actions/${owner}/${repo}`, { recursive: true })
 
             // Create folder to extract action into
             fs.mkdirSync(`.github/actions/${owner}/${repo}`, { recursive: true })
@@ -49,7 +52,7 @@ async function run() {
             // Override .gitignore in downloaded action to "hide" the action in case of commits
             fs.writeFileSync(`.github/actions/${owner}/${repo}/.gitignore`, '*')
         } else {
-            core.error(`Identifier '${action}' is not valid`)
+            core.setFailed(`Identifier '${action}' is invalid`)
         }
     })
 }
