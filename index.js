@@ -9,7 +9,7 @@ async function run() {
     var actions = core.getInput('action', { required: true });
     var regex = /^([\w\-]+)\/([\w\-]+)(@([\w\-]+))?$/;
     if (!fs.existsSync(`.github/actions`))
-        fs.mkdirSync(`.github/actions`);
+        fs.mkdirSync(`.github/actions`, { recursive: true });
     actions.split("\n").forEach(async (action) => {
         if (action.match(regex)) {
             var [_, owner, repo, _, ref] = action.match(regex);
