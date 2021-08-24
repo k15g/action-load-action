@@ -28,7 +28,8 @@ async function run() {
 
             // Remove existing version of action if available
             if (fs.existsSync(`.github/actions/${owner}/${repo}`))
-                fs.rmSync(`.github/actions/${owner}/${repo}`, { recursive: true })
+                fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true })
+                // fs.rmSync(`.github/actions/${owner}/${repo}`, { recursive: true })
 
             // Create folder to extract action into
             fs.mkdirSync(`.github/actions/${owner}/${repo}`, { recursive: true })
@@ -42,7 +43,8 @@ async function run() {
             })
 
             // Remove temporary file
-            fs.rmSync(`.github/actions/${owner}-${repo}.tar.gz`)
+            fs.unlinkSync(`.github/actions/${owner}-${repo}.tar.gz`)
+            // fs.rmSync(`.github/actions/${owner}-${repo}.tar.gz`)
 
             // Override .gitignore in downloaded action to "hide" the action in case of commits
             fs.writeFileSync(`.github/actions/${owner}/${repo}/.gitignore`, '*')
