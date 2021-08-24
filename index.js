@@ -16,7 +16,7 @@ async function run() {
             var response = await octokit.rest.repos.downloadTarballArchive({ owner, repo, ref });
             fs.writeFileSync(`.github/actions/${owner}-${repo}.tar.gz`, Buffer.from(response.data));
             if (fs.existsSync(`.github/actions/${owner}/${repo}`))
-                fs.rmSync(`.github/actions/${owner}/${repo}`, { recursive: true });
+                fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
             fs.mkdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
             tar.extract({
                 file: `.github/actions/${owner}-${repo}.tar.gz`,
@@ -24,7 +24,7 @@ async function run() {
                 C: `.github/actions/${owner}/${repo}`,
                 sync: true
             });
-            fs.rmSync(`.github/actions/${owner}-${repo}.tar.gz`);
+            fs.unlinkSync(`.github/actions/${owner}-${repo}.tar.gz`);
             fs.writeFileSync(`.github/actions/${owner}/${repo}/.gitignore`, '*');
         }
         else {
