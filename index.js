@@ -8,15 +8,19 @@ async function run() {
     var octokit = github.getOctokit(core.getInput('token'));
     var actions = core.getInput('action', { required: true });
     var regex = /^([\w\-]+)\/([\w\-]+)(@([\w\-]+))?$/;
-    if (!fs.existsSync(`.github/actions`))
-        fs.mkdirSync(`.github/actions`, { recursive: true });
+    fs.mkdirSync(`.github/actions`, { recursive: true });
     actions.split("\n").forEach(async (action) => {
         if (action.match(regex)) {
             var [_, owner, repo, _, ref] = action.match(regex);
-            var response = await octokit.rest.repos.downloadTarballArchive({ owner, repo, ref });
+            try {
+                var response = await octokit.rest.repos.downloadTarballArchive({ owner, repo, ref });
+            }
+            catch (e) {
+                core.setFailed(`Unable to fetch '${action}': ${e.message}`);
+                return;
+            }
             fs.writeFileSync(`.github/actions/${owner}-${repo}.tar.gz`, Buffer.from(response.data));
-            if (fs.existsSync(`.github/actions/${owner}/${repo}`))
-                fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
+            fs.rmdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
             fs.mkdirSync(`.github/actions/${owner}/${repo}`, { recursive: true });
             tar.extract({
                 file: `.github/actions/${owner}-${repo}.tar.gz`,
@@ -28,7 +32,7 @@ async function run() {
             fs.writeFileSync(`.github/actions/${owner}/${repo}/.gitignore`, '*');
         }
         else {
-            core.error(`Identifier '${action}' is not valid`);
+            core.setFailed(`Identifier '${action}' is invalid`);
         }
     });
 }
