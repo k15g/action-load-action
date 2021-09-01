@@ -1,0 +1,19 @@
+name: Load action
+description: ...
+author: Erlend Klakegg Bergheim
+
+inputs:
+  token:
+    description: Token
+    required: false
+  action:
+    description: Action identifier
+    required: true
+
+branding:
+  color: green
+  icon: power
+
+runs:
+  using: node12
+  main: index.js
